@@ -1,0 +1,220 @@
+program cincocuatro;
+const corte=0;
+type
+
+reclamo=record
+codigo:integer;
+tipo:string;
+ano:integer;
+end;
+
+reclamo2=record
+dni:integer;
+informacion:reclamo;
+end;
+
+lista=^nodolista;
+nodolista=record
+dato:reclamo;
+sig:lista;
+end;
+
+tarbol=record
+dni:integer;
+reclamos:lista;
+cantidad:integer;
+end;
+
+arbol=^nodoarbol;
+nodoarbol=record
+dato:tarbol;
+hi:arbol;
+hd:arbol;
+end;
+
+lista2=^nodolista2;
+nodolista2=record
+dato:integer;
+sig:lista2;
+end;
+
+//Cargo la estructura//
+procedure cargo(var a:arbol);
+
+procedure leer(var r:reclamo2);
+var v:array[0..1]of string=('urgente','no urgente');
+begin
+r.informacion.codigo:=random(100)*10;
+if(r.informacion.codigo<>corte)then
+begin
+r.dni:=100+random(100+1)*10;
+r.informacion.tipo:=v[random(2)];
+r.informacion.ano:=1980+random(45);
+end;
+end;
+
+procedure insertar(var a:arbol;r:reclamo2);
+
+procedure agregar(var l:lista;c:integer;t:string;a:integer);
+var nue:lista;
+begin
+new(nue);
+nue^.dato.codigo:=c;nue^.dato.tipo:=t;nue^.dato.ano:=a;
+nue^.sig:=l;
+l:=nue;
+end;
+begin
+if(a=nil)then
+begin
+new(a);
+a^.dato.dni:=r.dni;
+a^.dato.reclamos:=nil;
+agregar(a^.dato.reclamos,r.informacion.codigo,r.informacion.tipo,r.informacion.ano);
+a^.dato.cantidad:=1;
+end else
+       if(a^.dato.dni=r.dni)then
+       begin
+         agregar(a^.dato.reclamos,r.informacion.codigo,r.informacion.tipo,r.informacion.ano);
+         a^.dato.cantidad:=a^.dato.cantidad+1;
+       end else
+              if(a^.dato.dni<r.dni)then insertar(a^.hd,r)
+              else insertar(a^.hi,r); 
+
+end;
+
+var r:reclamo2;
+begin
+a:=nil;
+leer(r);
+while(r.informacion.codigo<>corte)do
+begin
+insertar(a,r);
+leer(r);
+end;
+end;
+
+procedure imprime(a:arbol);
+
+procedure imprimelista(l:lista);
+begin
+writeln('Informacion de los reclamos');
+while(l<>nil)do
+begin
+
+writeln('codigo ',l^.dato.codigo);
+writeln('tipo ',l^.dato.tipo);
+writeln('ano ',l^.dato.ano);
+l:=l^.sig;
+end;
+end;
+begin
+if(a<>nil)then
+begin
+imprime(a^.hi);
+writeln('DNI: ',a^.dato.dni,' | Cantidad de reclamos: ',a^.dato.cantidad);
+imprimelista(a^.dato.reclamos);
+imprime(a^.hd);
+end;
+end;
+
+//Esta funcion cumple con el inciso b//
+function incisob(a:arbol;dni:integer):integer;
+begin
+if(a=nil)then incisob:=0
+else 
+  if(a^.dato.dni=dni)then incisob:=a^.dato.cantidad
+  else 
+    if(a^.dato.dni<dni)then incisob:=incisob(a^.hd,dni)
+    else incisob:=incisob(a^.hi,dni);  
+
+
+end;
+
+//Esta funcion cumple con el inciso c//
+
+procedure verifica(var dni,dni2:integer);
+var aux:integer;
+begin
+if(dni2<dni)then
+begin
+aux:=dni;
+dni:=dni2;
+dni2:=aux;
+end;
+end;
+
+function incisoc(a:arbol;dni,dni2:integer):integer;
+begin
+if(a=nil)then incisoc:=0
+else
+  if(a^.dato.dni> dni) and (a^.dato.dni<dni2)then incisoc:=a^.dato.cantidad+incisoc(a^.hd,dni,dni2)+incisoc(a^.hi,dni,dni2)
+  else 
+    if(a^.dato.dni<dni)then incisoc:=incisoc(a^.hd,dni,dni2)
+    else incisoc:=incisoc(a^.hi,dni,dni2);
+
+end;
+
+//Este apartado cumple con el inciso d//
+
+procedure incisod(a:arbol;ano:integer;var l:lista2); 
+
+procedure agregar(var l:lista2;cod:integer);
+var nue:lista2;
+begin
+new(nue);
+nue^.dato:=cod;
+nue^.sig:=l;
+l:=nue;
+end;
+
+procedure busco(var l:lista2;l2:lista;ano:integer);
+begin
+while(l2<>nil)do
+begin
+if(l2^.dato.ano=ano)then agregar(l,l2^.dato.codigo);
+l2:=l2^.sig;
+end;
+end;
+
+begin
+if(a<>nil)then
+begin
+  busco(l,a^.dato.reclamos,ano);
+  incisod(a^.hd,ano,l);
+  incisod(a^.hi,ano,l);
+end;
+end;
+procedure imprimelista(l:lista2);
+begin
+
+while(l<>nil)do
+begin
+writeln(l^.dato);
+l:=l^.sig;
+end;
+end;
+//PROGRAMA PRINCIPAL//
+var a:arbol;l:lista2;
+dni,dni2,ano:integer;
+begin
+randomize;
+cargo(a);
+writeln;
+writeln;
+imprime(a);
+writeln;
+writeln('Ingrese dni');readln(dni);
+if(incisob(a,dni)=0)then writeln(' No se encontro el dni ')
+else writeln(' A continuacion cantidad de reclamos ingresados ',incisob(a,dni));
+writeln;
+writeln('Ingrese dos dni ');readln(dni);readln(dni2);
+verifica(dni,dni2);
+if(incisoc(a,dni,dni2)=0)then writeln('no hay reclamos en el rango ingresado')
+else writeln(' La cantidad de reclamos en el rango ingresado es ',incisoc(a,dni,dni2));
+writeln;
+writeln('Ingrese un ano ');readln(ano);l:=nil;
+incisod(a,ano,l);
+imprimelista(l);
+
+
+end.

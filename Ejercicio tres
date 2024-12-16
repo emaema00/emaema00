@@ -1,0 +1,212 @@
+program cincotres;
+const corte=0;
+type rangorubro=1..10;
+
+tproducto=record
+codigo:integer;
+stock:integer;
+unitario:real;
+end;
+
+tproducto2=record
+rubro:rangorubro;
+infoproducto:tproducto;
+end;
+
+tproducto3=record
+codigo:integer;
+stock:integer;
+end;
+
+arbol=^nodoarbol;
+nodoarbol=record
+dato:tproducto;
+hi:arbol;
+hd:arbol
+end;
+
+vector=array[rangorubro] of arbol;
+
+vectormax=array[rangorubro]of tproducto3;
+vectorcontador=array[rangorubro]of integer;
+//cargo el vector//
+
+procedure inicio(var v:vector);
+var i:rangorubro;
+begin
+
+for i:=1 to 10 do v[i]:=nil;
+
+end;
+procedure cargo(var v:vector);
+
+procedure leer(var p2:tproducto2);
+begin
+p2.infoproducto.codigo:=random(100)*100;
+p2.infoproducto.unitario:=50+(random(500)*10);
+p2.infoproducto.stock:=1+random(20);
+p2.rubro:=1+random(10);
+end;
+//...................................................................//
+procedure insertar(var a:arbol;p:tproducto);
+begin
+if(a=nil)then
+begin
+new(a);
+a^.dato:=p;
+a^.hd:=nil;a^.hi:=nil;
+end 
+else  if(p.codigo>=a^.dato.codigo)then insertar(a^.hd,p)
+      else insertar(a^.hi,p);
+end;
+//...................................................................//
+var p2:tproducto2;p:tproducto;
+begin
+inicio(v);
+leer(p2);
+while(p2.infoproducto.codigo<>corte)do
+begin
+p.codigo:=p2.infoproducto.codigo;p.stock:=p2.infoproducto.stock;p.unitario:=p2.infoproducto.unitario;
+insertar(v[p2.rubro],p);
+leer(p2);
+end;
+end;
+
+//..................................................//
+procedure imprimo(v:vector);
+procedure imprimoarbol(a:arbol);
+begin
+if(a<>nil)then
+begin
+writeln('Codigo producto ',a^.dato.codigo,' Stock disponible ',a^.dato.stock,' Valor por unidad $',a^.dato.unitario:2:4);
+imprimoarbol(a^.hi);
+imprimoarbol(a^.hd);
+end;
+end;
+var i:rangorubro;
+begin
+for i:=1 to 10 do
+begin
+if(v[i]<>nil)then writeln('Rubro ',i);
+imprimoarbol(v [i]);
+end;
+end;
+//....................................................................//
+procedure busco(a:arbol;c:integer;var ok:boolean);
+begin
+if(a<>nil)then
+begin
+ if(a^.dato.codigo=c)then ok:=true
+ else if(a^.dato.codigo<c)then busco(a^.hd,c,ok)
+      else busco(a^.hi,c,ok);
+         
+end;
+end;
+function incisob(v:vector;r,c:integer):boolean;
+var ok:boolean;
+begin
+ok:=false;
+busco(v[r],c,ok);
+incisob:=ok;
+end;
+
+
+//carga vector max//
+procedure incisoc(v:vector;var v2:vectormax);
+procedure buscomax(a:arbol;var p:tproducto3);
+begin
+if(a<>nil)then
+begin
+  p.codigo:=a^.dato.codigo;
+  p.stock:=a^.dato.stock;
+  buscomax(a^.hd,p);
+end;
+end;
+
+var p:tproducto3;i:rangorubro;
+begin
+for i:=1 to 10 do
+begin
+p.codigo:=-1;p.stock:=0;
+buscomax(v[i],p);
+v2[i]:=p;
+end;
+end;
+//imprimo inciso c//
+procedure imprimoincisoc(v2:vectormax);
+var i:rangorubro;
+begin
+for i:=1 to 10 do
+begin
+writeln(v2[i].codigo,'  ',v2[i].stock,'  ');
+end;
+end;
+//.................................................................//
+procedure verificar(var c,c2:integer);
+var aux:integer;
+begin
+if(c2<c)then
+begin
+aux:=c;
+c:=c2;
+c2:=aux;
+end;
+end;
+
+procedure incisod(v:vector;c,c2:integer;var v3:vectorcontador);
+procedure inicio(var v:vectorcontador);
+var i:rangorubro;
+begin
+for i:=1 to 10 do v[i]:=0;
+end;
+
+function codigosenrango(a:arbol;c,c2:integer):integer;
+
+begin
+if(a=nil)then codigosenrango:=0
+else if(a^.dato.codigo>c)and(a^.dato.codigo<c2)then codigosenrango:=1+codigosenrango(a^.hd,c,c2)+codigosenrango(a^.hi,c,c2)
+     else if(a^.dato.codigo<c)then codigosenrango:= codigosenrango(a^.hd,c,c2)
+          else codigosenrango:=codigosenrango(a^.hi,c,c2);
+
+end;
+var i:rangorubro;
+begin
+inicio(v3);
+for i:=1 to 10 do
+begin
+v3[i]:=codigosenrango(v[i],c,c2);
+end;
+end;
+procedure imprimoincisod(v:vectorcontador);
+var i:rangorubro;
+begin
+for i:=1 to 10 do
+begin
+writeln(v[i]);
+
+end;
+end;
+//PROGRAMA PRINCIPAL//
+
+var v:vector;v2:vectormax;v3:vectorcontador;
+rubro,codigo,codigo2:integer;
+begin
+randomize;
+cargo(v);
+writeln;
+writeln;
+imprimo(v);
+writeln;
+writeln('Ingrese rubro ');readln(rubro);writeln('Ingrese codigo ');readln(codigo);
+if(incisob(v,rubro,codigo))then writeln('Existe')
+else writeln('No existe');
+writeln;
+writeln;
+incisoc(v,v2);
+imprimoincisoc(v2);
+writeln;
+writeln('Ingrese dos codigos de producto ');readln(codigo);readln(codigo2);
+verificar(codigo,codigo2);
+incisod(v,codigo,codigo2,v3);
+imprimoincisod(v3);
+end.
